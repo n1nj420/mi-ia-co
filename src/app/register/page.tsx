@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { registerUser } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function RegisterPage() {
@@ -23,23 +22,32 @@ export default function RegisterPage() {
     setSuccess(false)
 
     try {
-      // Opción 1: Guardar directo en Supabase
-      const result = await registerUser(formData)
-      
-      if (result.success) {
-        setSuccess(true)
-        setFormData({ name: '', email: '', role: '', interests: '' })
-        
-        // Redirigir al dashboard después de 2 segundos
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 2000)
-      } else {
-        setError(result.error?.message || 'Error al registrar usuario')
+      // ✅ CAMBIO: Enviar a n8n webhook (esto activará emails + guardado en Supabase)
+      const response = await fetch('https://mi-ia.app.n8n.cloud/webhook/user-registration', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
+
+      const result = await response.json()
+      
+      setSuccess(true)
+      setFormData({ name: '', email: '', role: '', interests: '' })
+      
+      // Redirigir al dashboard después de 2 segundos
+      setTimeout(() => {
+        router.push('/dashboard')
+      }, 2000)
+      
     } catch (err) {
-      setError('Error inesperado al registrar usuario')
-      console.error(err)
+      setError('Error al registrar usuario. Por favor intenta de nuevo.')
+      console.error('Error:', err)
     } finally {
       setLoading(false)
     }
@@ -72,7 +80,7 @@ export default function RegisterPage() {
 
         {success && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4">
-            ¡Registro exitoso! Redirigiendo al dashboard...
+            ¡Registro exitoso! Revisa tu email. Redirigiendo al dashboard...
           </div>
         )}
 
