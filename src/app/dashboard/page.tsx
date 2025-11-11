@@ -20,7 +20,11 @@ export default function DashboardPage() {
       const result = await getUsers()
       
       if (result.success && result.data) {
-        setUsers(result.data)
+        // Filtrar usuarios con datos válidos (no NULL)
+        const validUsers = result.data.filter(
+          user => user.name && user.email && user.role
+        )
+        setUsers(validUsers)
       } else {
         setError(result.error?.message || 'Error al cargar usuarios')
       }
@@ -41,6 +45,16 @@ export default function DashboardPage() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  // Helper para obtener iniciales
+  const getInitials = (name: string) => {
+    if (!name) return '?'
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return name.charAt(0).toUpperCase()
   }
 
   return (
@@ -77,12 +91,14 @@ export default function DashboardPage() {
               {users.length}
             </div>
           </div>
+          
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm font-medium text-gray-600">Último Registro</div>
             <div className="text-lg font-semibold text-gray-900 mt-2">
-              {users.length > 0 ? users[0]?.name : 'N/A'}
+              {users.length > 0 ? users[0]?.name || 'N/A' : 'N/A'}
             </div>
           </div>
+          
           <div className="bg-white rounded-lg shadow p-6">
             <div className="text-sm font-medium text-gray-600">Estado</div>
             <div className="flex items-center mt-2">
@@ -135,7 +151,7 @@ export default function DashboardPage() {
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center">
                             <span className="text-white font-semibold text-sm">
-                              {user.name.charAt(0).toUpperCase()}
+                              {getInitials(user.name)}
                             </span>
                           </div>
                           <div className="ml-4">
@@ -149,13 +165,13 @@ export default function DashboardPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800 capitalize">
                           {user.role}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900 max-w-xs truncate">
-                          {user.interests}
+                          {user.interests || '-'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -193,7 +209,8 @@ export default function DashboardPage() {
           <div className="mt-6 text-center">
             <button
               onClick={loadUsers}
-              className="text-indigo-600 hover:text-indigo-700 font-medium text-sm"
+              disabled={loading}
+              className="text-indigo-600 hover:text-indigo-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               🔄 Actualizar datos
             </button>
